@@ -17,7 +17,7 @@ unsigned mem[500000] = {0};
 void read_input(string filename) {
     std::ifstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "Unable to open the file." << std::endl;
+        cout << "Unable to open the file." << endl;
         exit(1);
     }
 
@@ -66,6 +66,10 @@ void Decode(const unsigned &instruction, Op_type &type, Operation &op, unsigned 
 
     // get operation and its type
     op = getOperation(opcode, funct3, funct7, type);
+    if (op == None) {
+        cout << "NOT THAT OPERATION!!!" << endl;
+        exit(1);
+    }
 
     // save register_data and calculate immediate
     switch (type)
@@ -83,12 +87,12 @@ void Decode(const unsigned &instruction, Op_type &type, Operation &op, unsigned 
         case S_type:
             tmp_data[1] = reg[(instruction >> 15) & 0x1f];
             tmp_data[2] = reg[(instruction >> 20) & 0x1f];
-            tmp_data[3] = ((instruction >> 7) & 0x1f) | (((instruction >> 25) & 0x7f) << 5);
+            tmp_data[3] = ((instruction >> 7) & 0x1f) | ((unsigned(int(instruction) >> 25)) << 5);
             break;
         case B_type:
             tmp_data[1] = reg[(instruction >> 15) & 0x1f];
             tmp_data[2] = reg[(instruction >> 20) & 0x1f];
-            tmp_data[3] = ((instruction >> 8) & 0xf) | (((instruction >> 25) & 0x3f) << 4) | (((instruction >> 7) & 0x1) << 10) | (((instruction >> 31) & 0x1) << 11);
+            tmp_data[3] = ((instruction >> 8) & 0xf) | (((instruction >> 25) & 0x3f) << 4) | (((instruction >> 7) & 0x1) << 10) | ((unsigned(int(instruction) >> 31)) << 11);
             break;
         case U_type:
             tmp_data[0] = (instruction >> 7) & 0x1f;
@@ -96,7 +100,7 @@ void Decode(const unsigned &instruction, Op_type &type, Operation &op, unsigned 
             break;
         case J_type:
             tmp_data[0] = (instruction >> 7) & 0x1f;
-            tmp_data[3] = ((instruction >> 21) & 0x3ff) | (((instruction >> 20) & 0x1) << 10) | (((instruction >> 12) & 0xff) << 11) | (((instruction >> 31) & 0x1) << 19);
+            tmp_data[3] = ((instruction >> 21) & 0x3ff) | (((instruction >> 20) & 0x1) << 10) | (((instruction >> 12) & 0xff) << 11) | ((unsigned(int(instruction) >> 31)) << 19);
             break;
         default:
             break;
@@ -214,7 +218,7 @@ void WriteBack(const unsigned (&tmp_data)[5], const Op_type &type) {
 
 int main() {
     // read input data
-    read_input("testcases/tak.data");
+    read_input("testcases/qsort.data");
     
     int clk = 0;
     unsigned instruction = 0;
@@ -222,13 +226,14 @@ int main() {
     Op_type type = None_type;
     unsigned tmp_data[5] = {0}; // between the levels
 
-    //string q;
+    // string q;
     while (true) {
         ++clk;
         instruction = Fetch(pc);
         // cout << hex << "instruction: " << instruction << endl;
+        // cout << hex << "pc: " << pc << endl;
         if (instruction == 0x0ff00513) {
-            cout << unsigned(reg[10] & 255u) << endl;
+            cout << (((unsigned int)(reg[10]) & 255u)) << endl;
             break;
         }
         Decode(instruction, type, op, tmp_data);
@@ -237,7 +242,7 @@ int main() {
         Execute(op, type, instruction, tmp_data);
         // cout << hex << "rd_index: " << tmp_data[0] << " " << "rd: " << tmp_data[1] << " " << "pct: " << tmp_data[2] << " " << "mem_read: " << tmp_data[3] << " " << "rs2: " << tmp_data[4] << endl;
         Memory(tmp_data);
-        // cout << hex << "rd_index: " << tmp_data[0] << " " << "rd: " << tmp_data[1] << endl;
+        // out << hex << "rd_index: " << tmp_data[0] << " " << "rd: " << tmp_data[1] << endl;
         WriteBack(tmp_data, type);
         // cout << hex << "real rd: " << reg[tmp_data[0]] << " " << "next pc: " << pc << endl;
     }
