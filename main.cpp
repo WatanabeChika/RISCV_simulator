@@ -58,7 +58,6 @@ unsigned Fetch(const unsigned &pc) {
     return instruction;
 }
 
-/* tmp_data: rd_index, rs1, rs2, imm, NONE */
 void Decode(const unsigned &instruction, Op_type &type, Operation &op, unsigned (&tmp_data)[5]) {
     const unsigned opcode = instruction & 0x7f;
     const unsigned funct3 = (instruction >> 12) & 0x7;
@@ -107,7 +106,7 @@ void Decode(const unsigned &instruction, Op_type &type, Operation &op, unsigned 
     }
 }
 
-/* tmp_data: rd_index, rd_value, pct, mem_read, rs2 */
+/* NOW tmp_data: rd_index, rs1, rs2, imm, NONE */
 void Execute(const Operation &op, const Op_type &type, const unsigned &instruction, unsigned (&tmp_data)[5]) {
     // 10: no memory read; >20: zero-extend load; >10 && <20: sign-extend load; <10: store; the end number: bytes
     unsigned mem_read = 10;
@@ -149,7 +148,7 @@ void Execute(const Operation &op, const Op_type &type, const unsigned &instructi
     tmp_data[4] = rs2; // for store
 }
 
-/* tmp_data: rd_index, rd_value, NONE, NONE, NONE */
+/* NOW tmp_data: rd_index, rd_value, pct, mem_read, rs2 */
 void Memory(unsigned (&tmp_data)[5]) {
     unsigned rd = tmp_data[1];
     unsigned pct = tmp_data[2];
@@ -163,20 +162,20 @@ void Memory(unsigned (&tmp_data)[5]) {
             break;
         // sign-extend load
         case 11:
-            rd = int(mem[rd] && 0xff);
+            rd = int(mem[rd] & 0xff);
             break;
         case 12:
-            rd = int(mem[rd] && 0xffff);
+            rd = int(mem[rd] & 0xffff);
             break;
         case 14:
             rd = mem[rd];
             break;
         // zero-extend load
         case 21:
-            rd = unsigned(mem[rd] && 0xff);
+            rd = unsigned(mem[rd] & 0xff);
             break;
         case 22:
-            rd = unsigned(mem[rd] && 0xffff);
+            rd = unsigned(mem[rd] & 0xffff);
             break;
         // store
         case 1:
@@ -204,6 +203,7 @@ void Memory(unsigned (&tmp_data)[5]) {
     tmp_data[1] = rd;
 }
 
+/* NOW tmp_data: rd_index, rd_value, NONE, NONE, NONE */
 void WriteBack(const unsigned (&tmp_data)[5], const Op_type &type) {
     unsigned idx = tmp_data[0];
     unsigned rd = tmp_data[1];
@@ -218,7 +218,7 @@ void WriteBack(const unsigned (&tmp_data)[5], const Op_type &type) {
 
 int main() {
     // read input data
-    read_input("testcases/qsort.data");
+    read_input("testcases/bulgarian.data");
     
     int clk = 0;
     unsigned instruction = 0;
@@ -242,7 +242,7 @@ int main() {
         Execute(op, type, instruction, tmp_data);
         // cout << hex << "rd_index: " << tmp_data[0] << " " << "rd: " << tmp_data[1] << " " << "pct: " << tmp_data[2] << " " << "mem_read: " << tmp_data[3] << " " << "rs2: " << tmp_data[4] << endl;
         Memory(tmp_data);
-        // out << hex << "rd_index: " << tmp_data[0] << " " << "rd: " << tmp_data[1] << endl;
+        // cout << hex << "rd_index: " << tmp_data[0] << " " << "rd: " << tmp_data[1] << endl;
         WriteBack(tmp_data, type);
         // cout << hex << "real rd: " << reg[tmp_data[0]] << " " << "next pc: " << pc << endl;
     }
